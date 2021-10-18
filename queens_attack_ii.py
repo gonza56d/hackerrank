@@ -88,7 +88,7 @@ class ChessBoard:
                 self.get_next_row_for_direction(x, direction),
                 self.get_next_column_for_direction(x, direction)
             )):
-                self.obstacles_amount += 1
+                self.obstacles_amount -= 1
                 break
             self.possible_moves += 1
 
