@@ -1,5 +1,6 @@
 # From https://www.hackerrank.com/challenges/queens-attack-2/problem
 
+from enum import Enum
 from typing import List
 
 
@@ -11,119 +12,107 @@ class ChessBoard:
             obstacles_amount: int,
             queen_at_row: int,
             queen_at_column: int,
-            obstacles_at: List[List[int]]
+            obstacles_at: List[List[int]] = []
         ) -> None:
         self.board_length = board_length
+        self.obstacles_amount = obstacles_amount
         self.queen_at_row = queen_at_row
         self.queen_at_column = queen_at_column
-        self.obstacles_at = obstacles_at
+        self.obstacles_at = {(obstacle[0], obstacle[1]): True for obstacle in obstacles_at}
         self.possible_moves = None
-    
-    def __count_upwards(self) -> None:
-        for x in range(self.board_length - self.queen_at_row):
-            if self.__is_square_blocked(
-                row = self.queen_at_row + x + 1,
-                column = self.queen_at_column
-            ):
-                break
-            self.possible_moves += 1
 
-    def __count_downwards(self) -> None:
-        for x in range(self.queen_at_row):
-            if x + 1 == self.queen_at_row or self.__is_square_blocked(
-                row = self.queen_at_row - x - 1,
-                column = self.queen_at_column
-            ):
-                break
-            self.possible_moves += 1
+    def get_next_row_for_direction(self, current_count: int, direction: 'ChessBoard.DirectionOption') -> int:
+        if direction == ChessBoard.DirectionOption.LEFT or direction == ChessBoard.DirectionOption.RIGHT:
+            return self.queen_at_row
+        elif (direction == ChessBoard.DirectionOption.UP or 
+            direction == ChessBoard.DirectionOption.UPPER_RIGHT or
+            direction == ChessBoard.DirectionOption.UPPER_LEFT):
+            return self.queen_at_row + current_count + 1
+        elif (direction == ChessBoard.DirectionOption.DOWN or
+            direction == ChessBoard.DirectionOption.LOWER_LEFT or
+            direction == ChessBoard.DirectionOption.LOWER_RIGHT):
+            return self.queen_at_row - current_count - 1
+        else:
+            raise ValueError('Invalid value for direction parameter')
 
-    def __count_towards_left(self) -> None:
-        for x in range(self.queen_at_column):
-            if x + 1 == self.queen_at_column or self.__is_square_blocked(
-                row = self.queen_at_row,
-                column = self.queen_at_column - x - 1
-            ):
-                break
-            self.possible_moves += 1
-    
-    def __count_towards_right(self) -> None:
-        for x in range(self.board_length - self.queen_at_column):
-            if self.__is_square_blocked(
-                row = self.queen_at_row,
-                column = self.queen_at_column + x + 1
-            ):
-                break
-            self.possible_moves += 1
-    
-    def __count_upper_left_diagonal(self) -> None:
+    def get_next_column_for_direction(self, current_count: int, direction: 'ChessBoard.DirectionOption') -> int:
+        if direction == ChessBoard.DirectionOption.UP or direction == ChessBoard.DirectionOption.DOWN:
+            return self.queen_at_column
+        elif (direction == ChessBoard.DirectionOption.LEFT or
+            direction == ChessBoard.DirectionOption.UPPER_LEFT or
+            direction == ChessBoard.DirectionOption.LOWER_LEFT):
+            return self.queen_at_column - current_count - 1
+        elif (direction == ChessBoard.DirectionOption.RIGHT or
+            direction == ChessBoard.DirectionOption.UPPER_RIGHT or
+            direction == ChessBoard.DirectionOption.LOWER_RIGHT):
+            return self.queen_at_column + current_count + 1
+        else:
+            raise ValueError('Invalid value for direction parameter')
+
+    def get_count_for_direction(self, direction: 'ChessBoard.DirectionOption') -> int:
         remaining_up = self.board_length - self.queen_at_row
-        smaller = remaining_up if remaining_up < self.queen_at_column else self.queen_at_column
-        for x in range(smaller):
-            if self.__is_square_blocked(
-                row = self.queen_at_row + x + 1,
-                column = self.queen_at_column - x - 1
-            ):
-                break
-            self.possible_moves += 1
-
-    def __count_upper_right_diagonal(self) -> None:
-        remaining_up = self.board_length - self.queen_at_row
+        remaining_down = self.queen_at_row - 1
+        remaining_left = self.queen_at_column - 1
         remaining_right = self.board_length - self.queen_at_column
-        smaller = remaining_right if remaining_right < remaining_up else remaining_up
-        for x in range(smaller):
-            if self.__is_square_blocked(
-                row = self.queen_at_row + x + 1,
-                column = self.queen_at_column + x + 1
-            ):
-                break
-            self.possible_moves += 1
-
-    def __count_lower_right_diagonal(self) -> None:
-        remaining_down = self.queen_at_row
-        remaining_right = self.board_length - self.queen_at_column
-        smaller = remaining_right if remaining_right < remaining_down else remaining_down
-        for x in range(smaller):
-            if self.__is_square_blocked(
-                row = self.queen_at_row - x - 1,
-                column = self.queen_at_column + x + 1
-            ):
-                break
-            self.possible_moves += 1
-
-    def __count_lower_left_diagonal(self) -> None:
-        remaining_down = self.queen_at_row
-        remaining_left = self.queen_at_column
-        smaller = remaining_left if remaining_left < remaining_down else remaining_down
-        for x in range(smaller):
-            if self.__is_square_blocked(
-                row = self.queen_at_row - x - 1,
-                column = self.queen_at_column - x - 1
-            ):
+        if direction == ChessBoard.DirectionOption.UP:
+            return remaining_up
+        if direction == ChessBoard.DirectionOption.DOWN:
+            return remaining_down
+        if direction == ChessBoard.DirectionOption.LEFT:
+            return remaining_left
+        if direction == ChessBoard.DirectionOption.RIGHT:
+            return remaining_right
+        if direction == ChessBoard.DirectionOption.UPPER_LEFT:
+            return remaining_left if remaining_left < remaining_up else remaining_up
+        if direction == ChessBoard.DirectionOption.UPPER_RIGHT:
+            return remaining_right if remaining_right < remaining_up else remaining_up
+        if direction == ChessBoard.DirectionOption.LOWER_LEFT:
+            return remaining_left if remaining_left < remaining_down else remaining_down
+        if direction == ChessBoard.DirectionOption.LOWER_RIGHT:
+            return remaining_right if remaining_right < remaining_down else remaining_down
+    
+    class DirectionOption(Enum):
+        UP = 'Up'
+        DOWN = 'Down'
+        LEFT = 'Left'
+        RIGHT = 'Right'
+        UPPER_RIGHT = 'Upper Right'
+        LOWER_RIGHT = 'Lower Right'
+        UPPER_LEFT = 'Upper Left'
+        LOWER_LEFT = 'Lower Left'
+    
+    def __count_towards(self, direction: 'ChessBoard.DirectionOption') -> None:
+        count_for_direction = self.get_count_for_direction(direction)
+        for x in range(count_for_direction):
+            if self.obstacles_at.get((
+                self.get_next_row_for_direction(x, direction),
+                self.get_next_column_for_direction(x, direction)
+            )):
                 break
             self.possible_moves += 1
 
     def __is_square_blocked(self, row: int, column: int) -> bool:
-        if not self.obstacles_at:
+        if self.obstacles_amount < 1:
             return False
         for obstacle in self.obstacles_at:
             if obstacle[0] == row and obstacle[1] == column:
-                self.obstacles_at.remove(obstacle)
+                self.obstacles_amount -= 1
                 return True
         return False
 
     def count_queen_posible_moves(self) -> None:
         self.possible_moves = 0
-        self.__count_upwards()
-        self.__count_downwards()
-        self.__count_towards_left()
-        self.__count_towards_right()
-        self.__count_upper_left_diagonal()
-        self.__count_upper_right_diagonal()
-        self.__count_lower_right_diagonal()
-        self.__count_lower_left_diagonal()
+        self.__count_towards(ChessBoard.DirectionOption.UP)
+        self.__count_towards(ChessBoard.DirectionOption.DOWN)
+        self.__count_towards(ChessBoard.DirectionOption.LEFT)
+        self.__count_towards(ChessBoard.DirectionOption.RIGHT)
+        self.__count_towards(ChessBoard.DirectionOption.UPPER_LEFT)
+        self.__count_towards(ChessBoard.DirectionOption.UPPER_RIGHT)
+        self.__count_towards(ChessBoard.DirectionOption.LOWER_LEFT)
+        self.__count_towards(ChessBoard.DirectionOption.LOWER_RIGHT)
 
 
-def queens_attack(n: int, k: int, r_q: int, c_q: int, obstacles: List[List[int]]):
+def queens_attack(n: int, k: int, r_q: int, c_q: int, obstacles: List[List[int]] = []):
     """Resolve queens attack.
 
     Parameters
@@ -147,13 +136,8 @@ def queens_attack(n: int, k: int, r_q: int, c_q: int, obstacles: List[List[int]]
     """
     chess_board = ChessBoard(n, k, r_q, c_q, obstacles)
     chess_board.count_queen_posible_moves()
-    print(chess_board.possible_moves)
+    return chess_board.possible_moves
 
 
-queens_attack(
-    5,
-    3,
-    4,
-    3,
-    [[5, 5], [4, 2], [2, 3]]
-)
+assert queens_attack(4, 0, 4, 4) == 9
+assert queens_attack(5, 3, 4, 3, [[5, 5], [4, 2], [2, 3]]) == 10
