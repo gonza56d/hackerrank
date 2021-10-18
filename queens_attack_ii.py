@@ -84,21 +84,13 @@ class ChessBoard:
     def __count_towards(self, direction: 'ChessBoard.DirectionOption') -> None:
         count_for_direction = self.get_count_for_direction(direction)
         for x in range(count_for_direction):
-            if self.obstacles_at.get((
+            if self.obstacles_amount > 0 and self.obstacles_at.get((
                 self.get_next_row_for_direction(x, direction),
                 self.get_next_column_for_direction(x, direction)
             )):
+                self.obstacles_amount += 1
                 break
             self.possible_moves += 1
-
-    def __is_square_blocked(self, row: int, column: int) -> bool:
-        if self.obstacles_amount < 1:
-            return False
-        for obstacle in self.obstacles_at:
-            if obstacle[0] == row and obstacle[1] == column:
-                self.obstacles_amount -= 1
-                return True
-        return False
 
     def count_queen_posible_moves(self) -> None:
         self.possible_moves = 0
